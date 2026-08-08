@@ -1,0 +1,43 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "signal_preprocess_gui.py"
+      - "requirements.txt"
+      - ".github/workflows/build-windows-exe.yml"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Build EXE
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name Signal_Preprocess_GUI signal_preprocess_gui.py
+
+      - name: SHA256
+        shell: pwsh
+        run: |
+          Get-FileHash dist\Signal_Preprocess_GUI.exe -Algorithm SHA256 | Format-List | Out-File dist\Signal_Preprocess_GUI.exe.sha256
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Signal_Preprocess_GUI_Windows
+          path: |
+            dist/Signal_Preprocess_GUI.exe
+            dist/Signal_Preprocess_GUI.exe.sha256
